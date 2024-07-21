@@ -9,7 +9,7 @@ from sanic import Sanic, response
 from sanic.exceptions import NotFound
 from jinja2 import Environment, FileSystemLoader
 
-from core.models import LogEntry
+from .models import LogEntry
 
 load_dotenv()
 
@@ -23,15 +23,10 @@ if prefix == "NONE":
     prefix = ""
 
 MONGO_URI = os.getenv("MONGO_URI") or os.getenv("CONNECTION_URI")
-if not MONGO_URI:
-    print("No CONNECTION_URI config var found. "
-          "Please enter your MongoDB connection URI in the configuration or .env file.")
-    exit(1)
-
 app = Sanic(__name__)
-app.static("/static", "./static")
+app.static("/static", os.path.join(os.path.dirname(__file__), "static"))
 
-jinja_env = Environment(loader=FileSystemLoader("templates"))
+jinja_env = Environment(loader=FileSystemLoader(os.path.join(os.path.dirname(__file__), "templates")))
 
 
 def render_template(name, *args, **kwargs):
@@ -106,10 +101,17 @@ async def get_logs_file(request, key):
 
     return log_entry.render_html()
 
+def main():
+    if not MONGO_URI:
+        print("No CONNECTION_URI config var found. "
+              "Please enter your MongoDB connection URI in the configuration or .env file.")
+        exit(1)
 
-if __name__ == "__main__":
     app.run(
         host=os.getenv("HOST", "0.0.0.0"),
         port=os.getenv("PORT", 8000),
         debug=bool(os.getenv("DEBUG", False)),
     )
+
+if __name__ == "__main__":
+    main()
